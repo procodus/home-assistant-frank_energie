@@ -1,10 +1,11 @@
-"""Config flow for Picnic integration."""
+"""Config flow for Frank Energie integration."""
 from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import (
@@ -15,9 +16,8 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.data_entry_flow import FlowResult
-from python_frank_energie import FrankEnergie
-from python_frank_energie.exceptions import AuthException
 
+from .api import AuthException, FrankEnergieApi
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,7 +52,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors=errors,
             )
 
-        async with FrankEnergie() as api:
+        async with aiohttp.ClientSession() as session:
+            api = FrankEnergieApi(session=session)
             try:
                 auth = await api.login(
                     user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
@@ -63,8 +64,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data = {
             CONF_USERNAME: user_input[CONF_USERNAME],
-            CONF_ACCESS_TOKEN: auth.authToken,
-            CONF_TOKEN: auth.refreshToken,
+            CONF_ACCESS_TOKEN: auth.get("authToken"),
+            CONF_TOKEN: auth.get("refreshToken"),
         }
 
         if self._reauth_entry:

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -22,7 +22,7 @@ async def frank_energie_config_entry(hass: HomeAssistant, enable_custom_integrat
     config_entry = MockConfigEntry(
         domain=const.DOMAIN,
         data={},
-        unique_id=const.UNIQUE_ID,
+        unique_id="frank_energie",
     )
     config_entry.add_to_hass(hass)
 
@@ -71,20 +71,16 @@ async def trigger_update(hass, delta_seconds=config_entries.RELOAD_AFTER_UPDATE_
     await hass.async_block_till_done()
 
 
-@patch("frank_energie.price_data.dt.now")
+@patch("custom_components.frank_energie.models._utcnow")
 async def test_sensors(
     dt_mock,
     aioclient_responses: ResponseMocks,
     frank_energie_config_entry: MockConfigEntry,
     hass: HomeAssistant,
 ):
-    hass.config.set_time_zone("Europe/Amsterdam")
-    dt_mock.return_value = (
-        datetime.utcnow()
-        .replace(hour=14, minute=15, second=0, microsecond=0)
-        .astimezone()
-    )
-    start_of_day = datetime.utcnow().replace(hour=0, minute=0)
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    dt_mock.return_value = datetime.now(timezone.utc).replace(hour=14, minute=15, second=0, microsecond=0)
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0)
     aioclient_responses.add(
         start_of_day,
         [0.2] * 10 + [0.25, 0.3, 0.5, 0.4] + [0.15] * 10,
@@ -136,20 +132,16 @@ async def test_sensors(
     assert hass.states.get("sensor.current_gas_tax_only").state == "0.1845"
 
 
-@patch("frank_energie.price_data.dt.now")
+@patch("custom_components.frank_energie.models._utcnow")
 async def test_sensors_get_data_of_current_hour(
     dt_mock,
     aioclient_responses: ResponseMocks,
     frank_energie_config_entry: MockConfigEntry,
     hass: HomeAssistant,
 ):
-    hass.config.set_time_zone("Europe/Amsterdam")
-    dt_mock.return_value = (
-        datetime.utcnow()
-        .replace(hour=5, minute=15, second=0, microsecond=0)
-        .astimezone()
-    )
-    start_of_day = datetime.utcnow().replace(hour=0, minute=0)
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    dt_mock.return_value = datetime.now(timezone.utc).replace(hour=5, minute=15, second=0, microsecond=0)
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0)
     aioclient_responses.add(
         start_of_day, [0.3] * 12 + [0.15] * 12, [1.75] * 6 + [1.23] * 18
     )
@@ -168,10 +160,8 @@ async def test_sensors_get_data_of_current_hour(
     assert hass.states.get("sensor.current_gas_price_all_in").state == "1.75"
 
     # Change time to 12:15
-    dt_mock.return_value = (
-        datetime.utcnow()
-        .replace(hour=12, minute=15, second=0, microsecond=0)
-        .astimezone()
+    dt_mock.return_value = datetime.now(timezone.utc).replace(
+        hour=12, minute=15, second=0, microsecond=0
     )
     await trigger_update(hass, 7 * 3600)
 
@@ -179,20 +169,16 @@ async def test_sensors_get_data_of_current_hour(
     assert hass.states.get("sensor.current_gas_price_all_in").state == "1.23"
 
 
-@patch("frank_energie.price_data.dt.now")
+@patch("custom_components.frank_energie.models._utcnow")
 async def test_sensors_no_data_for_tomorrow(
     dt_mock,
     aioclient_responses: ResponseMocks,
     frank_energie_config_entry: MockConfigEntry,
     hass: HomeAssistant,
 ):
-    hass.config.set_time_zone("Europe/Amsterdam")
-    dt_mock.return_value = (
-        datetime.utcnow()
-        .replace(hour=20, minute=0, second=0, microsecond=0)
-        .astimezone()
-    )
-    start_of_day = datetime.utcnow().replace(hour=0, minute=0)
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    dt_mock.return_value = datetime.now(timezone.utc).replace(hour=20, minute=0, second=0, microsecond=0)
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0)
 
     # First response is for today's data, 2nd for tomorrow's data
     aioclient_responses.add(start_of_day, [0.3] * 24, [1.75] * 6 + [1.23] * 18)
@@ -201,25 +187,20 @@ async def test_sensors_no_data_for_tomorrow(
     await hass.config_entries.async_setup(frank_energie_config_entry.entry_id)
     await hass.async_block_till_done()
 
-    # Check the state at 5:15
     assert hass.states.get("sensor.current_electricity_price_all_in").state == "0.3"
     assert hass.states.get("sensor.current_gas_price_all_in").state == "1.23"
 
 
-@patch("frank_energie.price_data.dt.now")
+@patch("custom_components.frank_energie.models._utcnow")
 async def test_sensors_hour_price_attr(
     dt_mock,
     aioclient_responses: ResponseMocks,
     frank_energie_config_entry: MockConfigEntry,
     hass: HomeAssistant,
 ):
-    hass.config.set_time_zone("Europe/Amsterdam")
-    dt_mock.return_value = (
-        datetime.utcnow()
-        .replace(hour=20, minute=0, second=0, microsecond=0)
-        .astimezone()
-    )
-    start_of_day = datetime.utcnow().replace(hour=0, minute=0)
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    dt_mock.return_value = datetime.now(timezone.utc).replace(hour=20, minute=0, second=0, microsecond=0)
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0)
 
     # First response is for today's data, 2nd for tomorrow's data
     aioclient_responses.add(
@@ -243,7 +224,7 @@ async def test_sensors_hour_price_attr(
     ]
     assert price_attr == price_generator(0.25, 0.05) + price_generator(0.3, 0.02)
 
-    # Check the all in electricity prices
+    # Check the all in gas prices
     price_attr = [
         a["price"]
         for a in hass.states.get("sensor.current_gas_price_all_in").attributes["prices"]

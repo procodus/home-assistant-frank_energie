@@ -241,16 +241,6 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
         },
     ),
     FrankEnergieEntityDescription(
-        key="expected_costs_this_month",
-        name="Expected cost this month",
-        device_class=SensorDeviceClass.MONETARY,
-        state_class=SensorStateClass.TOTAL,
-        native_unit_of_measurement=CURRENCY_EURO,
-        authenticated=True,
-        service_name=SERVICE_NAME_COSTS,
-        value_fn=lambda data: data[DATA_MONTH_SUMMARY].expectedCosts,
-    ),
-    FrankEnergieEntityDescription(
         key="invoice_previous_period",
         name="Invoice previous period",
         device_class=SensorDeviceClass.MONETARY,
@@ -258,12 +248,12 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
         native_unit_of_measurement=CURRENCY_EURO,
         authenticated=True,
         service_name=SERVICE_NAME_COSTS,
-        value_fn=lambda data: data[DATA_INVOICES].previousPeriodInvoice.TotalAmount
+        value_fn=lambda data: data[DATA_INVOICES].previousPeriodInvoice.totalAmount
         if data[DATA_INVOICES].previousPeriodInvoice
         else None,
         attr_fn=lambda data: {
-            "Start date": data[DATA_INVOICES].previousPeriodInvoice.StartDate,
-            "Description": data[DATA_INVOICES].previousPeriodInvoice.PeriodDescription,
+            "Start date": data[DATA_INVOICES].previousPeriodInvoice.startDate,
+            "Description": data[DATA_INVOICES].previousPeriodInvoice.periodDescription,
         },
     ),
     FrankEnergieEntityDescription(
@@ -274,12 +264,12 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
         native_unit_of_measurement=CURRENCY_EURO,
         authenticated=True,
         service_name=SERVICE_NAME_COSTS,
-        value_fn=lambda data: data[DATA_INVOICES].currentPeriodInvoice.TotalAmount
+        value_fn=lambda data: data[DATA_INVOICES].currentPeriodInvoice.totalAmount
         if data[DATA_INVOICES].currentPeriodInvoice
         else None,
         attr_fn=lambda data: {
-            "Start date": data[DATA_INVOICES].currentPeriodInvoice.StartDate,
-            "Description": data[DATA_INVOICES].currentPeriodInvoice.PeriodDescription,
+            "Start date": data[DATA_INVOICES].currentPeriodInvoice.startDate,
+            "Description": data[DATA_INVOICES].currentPeriodInvoice.periodDescription,
         },
     ),
     FrankEnergieEntityDescription(
@@ -290,12 +280,12 @@ SENSOR_TYPES: tuple[FrankEnergieEntityDescription, ...] = (
         native_unit_of_measurement=CURRENCY_EURO,
         authenticated=True,
         service_name=SERVICE_NAME_COSTS,
-        value_fn=lambda data: data[DATA_INVOICES].upcomingPeriodInvoice.TotalAmount
+        value_fn=lambda data: data[DATA_INVOICES].upcomingPeriodInvoice.totalAmount
         if data[DATA_INVOICES].upcomingPeriodInvoice
         else None,
         attr_fn=lambda data: {
-            "Start date": data[DATA_INVOICES].upcomingPeriodInvoice.StartDate,
-            "Description": data[DATA_INVOICES].upcomingPeriodInvoice.PeriodDescription,
+            "Start date": data[DATA_INVOICES].upcomingPeriodInvoice.startDate,
+            "Description": data[DATA_INVOICES].upcomingPeriodInvoice.periodDescription,
         },
     ),
 )
