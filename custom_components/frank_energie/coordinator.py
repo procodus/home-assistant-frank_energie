@@ -60,7 +60,13 @@ class FrankEnergieCoordinator(DataUpdateCoordinator):
         # because the gas prices response only contains data for the first day of the query
         try:
             prices_today = await self.__fetch_prices_with_fallback(today, tomorrow)
-            prices_tomorrow = await self.__fetch_prices_with_fallback(tomorrow, day_after_tomorrow)
+
+            try:
+                prices_tomorrow = await self.__fetch_prices_with_fallback(tomorrow, day_after_tomorrow)
+            except RequestException as ex:
+                # Tomorrow's prices may not be available yet (published ~15:00 CET)
+                LOGGER.debug("Tomorrow's prices not available yet: %s", ex)
+                prices_tomorrow = MarketPrices(electricity=PriceData(), gas=PriceData())
 
             data_month_summary = (
                 await self.api.month_summary(self.site_reference) if self.api.is_authenticated else None
